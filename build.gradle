@@ -67,10 +67,16 @@ dependencies {
     implementation fileTree(gameDirectory + "/lib/")
     implementation fileTree("./mods/") // Add all mods located in local mods folder
 
+    implementation "com.intellectualsites.http:HTTP4J:1.8"
+    implementation "org.sharegov:mjson:1.4.2"
+    implementation 'org.java-websocket:Java-WebSocket:1.6.0'
+
     // Add any third party library dependencies here. Remember to use libDepends, so that they will be added to your jar on build
     // These are some examples:
-//    libDepends group: 'com.google.guava', name: 'guava', version: '31.1-jre'
-//    libDepends files("path/to/library/jar.jar")
+
+    libDepends group: "com.intellectualsites.http", name: "HTTP4J", version: "1.8"
+    libDepends group: "org.sharegov", name: "mjson", version: "1.4.2"
+    libDepends group: "org.java-websocket", name: "Java-WebSocket", version: "1.6.0"
 }
 
 task createAppID {
@@ -153,6 +159,7 @@ task buildModJar(type: Jar) {
     group "necesse"
     description "Generates the mod jar into the build folder"
     dependsOn "classes"
+    duplicatesStrategy DuplicatesStrategy.WARN
 
     doFirst {
         fileTree(dir: buildLocation).exclude("${jarName}.jar").visit { FileVisitDetails details ->
@@ -163,7 +170,11 @@ task buildModJar(type: Jar) {
     // Add mod output
     from sourceSets.main.java.outputDir
     // Add the dependencies
-    from configurations.libDepends.collect { it.isDirectory() ? it : zipTree(it) }
+    from configurations.libDepends.collect {
+        it.isDirectory() ? it : zipTree(it).matching {
+            exclude "**/module-info.class"
+        }
+    }
 
     archiveName "${jarName}.jar"
     destinationDir file(buildLocation)
