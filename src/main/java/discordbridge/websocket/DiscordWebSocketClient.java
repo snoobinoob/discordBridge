@@ -88,7 +88,7 @@ public class DiscordWebSocketClient extends WebSocketClient {
             heartbeatTimer.scheduleAtFixedRate(new SendHeartbeatTask(), 0, intervalJson.asInteger());
             Utils.debug("[WS] Sending identify message");
             send(new IdentifyMessage());
-            DiscordBot.updatePresence();
+            DiscordBot.updatePresence(0);
         } else if (isMessageType(messageJson, OpCodes.HEARTBEAT_ACK)) {
             Utils.debug("[WS] Received heartbeat acknowledgment");
         } else if (isMessageType(messageJson, OpCodes.READY)) {

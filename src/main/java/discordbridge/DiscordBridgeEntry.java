@@ -42,14 +42,14 @@ public class DiscordBridgeEntry {
         GameEvents.addListener(ServerClientConnectedEvent.class, new GameEventListener<ServerClientConnectedEvent>() {
             @Override
             public void onEvent(ServerClientConnectedEvent serverClientConnectedEvent) {
-                DiscordBot.updatePresence();
+                DiscordBot.updatePresence(1);
             }
         });
 
         GameEvents.addListener(ServerClientDisconnectEvent.class, new GameEventListener<ServerClientDisconnectEvent>() {
             @Override
             public void onEvent(ServerClientDisconnectEvent serverClientDisconnectEvent) {
-                DiscordBot.updatePresence();
+                DiscordBot.updatePresence(-1);
             }
         });
     }

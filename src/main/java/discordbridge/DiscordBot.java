@@ -116,9 +116,9 @@ public class DiscordBot implements Runnable {
         return response.getResponseEntity(Json.class);
     }
 
-    public static void updatePresence() {
+    public static void updatePresence(int expectedDelta) {
         if (instance.wsClient != null) {
-            instance.wsClient.send(new PresenceMessage(instance.server));
+            instance.wsClient.send(new PresenceMessage(instance.server, expectedDelta));
         }
     }
 

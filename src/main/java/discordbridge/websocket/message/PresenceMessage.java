@@ -7,12 +7,12 @@ import necesse.engine.network.server.Server;
 public class PresenceMessage extends WebSocketMessage {
     private static final int WATCHING_ACTIVITY = 3;
 
-    public PresenceMessage(Server server) {
-        super(buildContent(server));
+    public PresenceMessage(Server server, int expectedDelta) {
+        super(buildContent(server, expectedDelta));
     }
 
-    private static Json buildContent(Server server) {
-        int numOnline = server.getPlayersOnline();
+    private static Json buildContent(Server server, int expectedDelta) {
+        int numOnline = server.getPlayersOnline() + expectedDelta;
         int numSlots = server.getSlots();
         String statusMessage = String.format("Online Players (%d/%d)", numOnline, numSlots);
         return Json.object()
