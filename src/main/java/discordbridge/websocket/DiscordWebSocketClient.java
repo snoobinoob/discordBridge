@@ -1,5 +1,7 @@
 package discordbridge.websocket;
 
+import discordbridge.DiscordBot;
+import discordbridge.Utils;
 import discordbridge.websocket.message.HeartbeatMessage;
 import discordbridge.websocket.message.IdentifyMessage;
 import discordbridge.websocket.message.WebSocketMessage;
@@ -22,8 +24,8 @@ public class DiscordWebSocketClient extends WebSocketClient {
     private Object heartbeatSequenceNumber;
     private Timer heartbeatTimer;
 
-    public DiscordWebSocketClient(URI serverUri) {
-        super(serverUri);
+    public DiscordWebSocketClient(URI websocketUri) {
+        super(websocketUri);
         state = State.DISCONNECTED;
     }
 
@@ -67,14 +69,22 @@ public class DiscordWebSocketClient extends WebSocketClient {
         e.printStackTrace();
     }
 
-    private void send(WebSocketMessage message) {
-        send(message.toString());
+    public void send(WebSocketMessage message) {
+        if (isOpen()) {
+            send(message.toString());
+        }
     }
 
     private void processConnectingMessage(Json messageJson) {
         if (isMessageType(messageJson, OpCodes.HELLO)) {
-            heartbeatTimer.scheduleAtFixedRate(new SendHeartbeatTask(), 0, messageJson.at("d").at("heartbeat_interval").asInteger());
+            Json intervalJson = Utils.atPath(messageJson, "d.heartbeat_interval");
+            if (intervalJson == null) {
+                System.out.println("[WS] Missing heartbeat interval in HELLO event");
+                return;
+            }
+            heartbeatTimer.scheduleAtFixedRate(new SendHeartbeatTask(), 0, intervalJson.asInteger());
             send(new IdentifyMessage());
+            DiscordBot.updatePresence();
         } else if (isMessageType(messageJson, OpCodes.HEARTBEAT_ACK)) {
             System.out.println("[WS] Received heartbeat acknowledgment");
         } else if (isMessageType(messageJson, OpCodes.READY)) {
@@ -83,25 +93,19 @@ public class DiscordWebSocketClient extends WebSocketClient {
     }
 
     private void processedConnectedMessage(Json messageJson) {
-
+        if (isMessageType(messageJson, OpCodes.MESSAGE_CREATE)) {
+            DiscordBot.handleChatMessage(messageJson);
+        }
     }
 
     private static boolean isMessageType(Json messageJson, int opcode) {
-        return hasMatchingAttribute(messageJson, "op", opcode);
+        return Utils.hasMatchingAttribute(messageJson, "op", opcode);
     }
 
     private static boolean isMessageType(Json messageJson, String type) {
-        boolean isOpZero = hasMatchingAttribute(messageJson, "op", 0);
-        boolean isType = hasMatchingAttribute(messageJson, "t", type);
+        boolean isOpZero = Utils.hasMatchingAttribute(messageJson, "op", 0);
+        boolean isType = Utils.hasMatchingAttribute(messageJson, "t", type);
         return isOpZero && isType;
-    }
-
-    private static boolean hasMatchingAttribute(Json json, String key, int value) {
-        return json.has(key) && json.at(key).isNumber() && json.at(key).asInteger() == value;
-    }
-
-    private static boolean hasMatchingAttribute(Json json, String key, String value) {
-        return json.has(key) && json.at(key).isString() && json.at(key).asString().equals(value);
     }
 
     private class SendHeartbeatTask extends TimerTask {

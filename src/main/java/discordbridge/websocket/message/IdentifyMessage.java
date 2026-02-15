@@ -18,7 +18,7 @@ public class IdentifyMessage extends WebSocketMessage {
                                 .set("browser", "Necesse")
                                 .set("device", "Necesse")
                         )
-                        .set("intents", GUILD_MESSAGES)
+                        .set("intents", GUILD_MESSAGES | MESSAGE_CONTENT)
                 )
         );
     }
