@@ -1,6 +1,9 @@
 package discordbridge;
 
 import mjson.Json;
+import necesse.engine.GameLog;
+
+import java.io.PrintStream;
 
 public class Utils {
     public static String getStringOrNull(Json data, String path) {
@@ -31,5 +34,25 @@ public class Utils {
             value = value.at(attr);
         }
         return value;
+    }
+
+    public static void log(String message) {
+        log(GameLog.out, message);
+    }
+
+    public static void debug(String message) {
+        log(GameLog.debug, message);
+    }
+
+    public static void warn(String message) {
+        log(GameLog.warn, message);
+    }
+
+    public static void error(String message) {
+        log(GameLog.err, message);
+    }
+
+    private static void log(PrintStream stream, String message) {
+        stream.println("[DiscordBridge] " + message);
     }
 }

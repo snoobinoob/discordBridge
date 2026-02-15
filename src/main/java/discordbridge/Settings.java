@@ -8,6 +8,10 @@ public class Settings extends ModSettings {
     public static String token = "";
     public static String channelID = "";
 
+    public static boolean areInvalid() {
+        return token.isEmpty() || channelID.isEmpty();
+    }
+
     @Override
     public void applyLoadData(LoadData loadData) {
         token = loadData.getSafeString("token", "");

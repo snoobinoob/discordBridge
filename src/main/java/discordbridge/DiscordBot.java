@@ -38,7 +38,7 @@ public class DiscordBot implements Runnable {
     public void run() {
         Json body = makeRequest("get", "/users/@me");
         if (body == null) {
-            System.out.println("Error fetching self");
+            Utils.warn("Error fetching bot information");
             return;
         }
         botUserID = Utils.getStringOrElse(body, "id", "");
@@ -54,7 +54,7 @@ public class DiscordBot implements Runnable {
     private void signIn() {
         Json body = makeRequest("get", "/gateway/bot");
         if (body == null) {
-            System.out.println("Error fetching websocket url");
+            Utils.warn("Error fetching websocket url");
             return;
         }
         String websocketUrl = body.at("url").asString();
@@ -62,14 +62,14 @@ public class DiscordBot implements Runnable {
             wsClient = new DiscordWebSocketClient(new URI(websocketUrl));
             wsClient.connect();
         } catch (URISyntaxException e) {
-            System.out.println("Unexpected format exception in websocket url");
+            Utils.warn("Unexpected format exception in websocket url");
         }
     }
 
     public static void handleChatMessage(Json data) {
         String authorID = Utils.getStringOrNull(data, "d.author.id");
         String channelID = Utils.getStringOrNull(data, "d.channel_id");
-        if (instance.botUserID.equals(authorID) || !Settings.channelID.equals(channelID)) {
+        if (instance.botUserID == null || instance.botUserID.equals(authorID) || !Settings.channelID.equals(channelID)) {
             return;
         }
 

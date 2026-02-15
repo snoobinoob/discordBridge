@@ -22,6 +22,10 @@ public class DiscordBridgeEntry {
         GameEvents.addListener(ServerStartEvent.class, new GameEventListener<ServerStartEvent>() {
             @Override
             public void onEvent(ServerStartEvent serverStartEvent) {
+                if (Settings.areInvalid()) {
+                    Utils.warn("Not configured!");
+                    return;
+                }
                 DiscordBot.init(serverStartEvent.server);
                 Thread botThread = new Thread(DiscordBot.instance);
                 botThread.start();

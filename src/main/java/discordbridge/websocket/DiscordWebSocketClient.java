@@ -6,6 +6,7 @@ import discordbridge.websocket.message.HeartbeatMessage;
 import discordbridge.websocket.message.IdentifyMessage;
 import discordbridge.websocket.message.WebSocketMessage;
 import mjson.Json;
+import necesse.engine.GameLog;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
@@ -39,18 +40,20 @@ public class DiscordWebSocketClient extends WebSocketClient {
 
     @Override
     public void onOpen(ServerHandshake handshake) {
-        System.out.println("[WS] Connected!");
+        Utils.debug("[WS] connection opened");
     }
 
     @Override
     public void onMessage(String message) {
-        System.out.println("[WS] Received message: " + message);
         Json json = Json.read(message);
+        Utils.debug("[WS] Received message: " + message);
         if (json.has("s")) {
-            System.out.println("[WS] Setting seq to: " + json.at("s").getValue());
             heartbeatSequenceNumber = json.at("s").getValue();
+            Utils.debug("[WS] Set sequence to: " + heartbeatSequenceNumber);
         }
-        if (state == State.CONNECTING) {
+        if (isMessageType(json, OpCodes.HEARTBEAT)) {
+            send(new HeartbeatMessage(heartbeatSequenceNumber));
+        } else if (state == State.CONNECTING) {
             processConnectingMessage(json);
         } else if (state == State.CONNECTED) {
             processedConnectedMessage(json);
@@ -59,14 +62,14 @@ public class DiscordWebSocketClient extends WebSocketClient {
 
     @Override
     public void onClose(int code, String reason, boolean remote) {
-        System.out.println("[WS] Connection closed");
+        Utils.log(String.format("[WS] Connection closed (%d: %s)", code, reason));
         heartbeatTimer.cancel();
     }
 
     @Override
     public void onError(Exception e) {
-        System.out.println("[WS] Error: " + e.getMessage());
-        e.printStackTrace();
+        Utils.warn("[WS] Error: " + e.getMessage());
+        e.printStackTrace(GameLog.debug);
     }
 
     public void send(WebSocketMessage message) {
@@ -79,15 +82,17 @@ public class DiscordWebSocketClient extends WebSocketClient {
         if (isMessageType(messageJson, OpCodes.HELLO)) {
             Json intervalJson = Utils.atPath(messageJson, "d.heartbeat_interval");
             if (intervalJson == null) {
-                System.out.println("[WS] Missing heartbeat interval in HELLO event");
+                Utils.warn("[WS] Missing heartbeat interval in HELLO event");
                 return;
             }
             heartbeatTimer.scheduleAtFixedRate(new SendHeartbeatTask(), 0, intervalJson.asInteger());
+            Utils.debug("[WS] Sending identify message");
             send(new IdentifyMessage());
             DiscordBot.updatePresence();
         } else if (isMessageType(messageJson, OpCodes.HEARTBEAT_ACK)) {
-            System.out.println("[WS] Received heartbeat acknowledgment");
+            Utils.debug("[WS] Received heartbeat acknowledgment");
         } else if (isMessageType(messageJson, OpCodes.READY)) {
+            Utils.log("[WS] Authentication complete!");
             state = State.CONNECTED;
         }
     }
@@ -111,7 +116,7 @@ public class DiscordWebSocketClient extends WebSocketClient {
     private class SendHeartbeatTask extends TimerTask {
         @Override
         public void run() {
-            System.out.println("[WS] Sending heartbeat (" + heartbeatSequenceNumber + ")");
+            Utils.debug("[WS] Sending heartbeat (" + heartbeatSequenceNumber + ")");
             send(new HeartbeatMessage(heartbeatSequenceNumber));
         }
     }
