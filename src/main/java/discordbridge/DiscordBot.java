@@ -66,44 +66,34 @@ public class DiscordBot implements Runnable {
         }
     }
 
-    public static void handleChatMessage(Json data) {
-        String authorID = Utils.getStringOrNull(data, "d.author.id");
-        String channelID = Utils.getStringOrNull(data, "d.channel_id");
-        if (instance.botUserID == null || instance.botUserID.equals(authorID) || !Settings.channelID.equals(channelID)) {
+    public static void handleChatMessage(Json messageJson) {
+        String authorID = Utils.getStringOrNull(messageJson, "d.author.id");
+        String channelID = Utils.getStringOrNull(messageJson, "d.channel_id");
+        if (authorID.equals(instance.botUserID) || !Settings.channelID.equals(channelID)) {
             return;
         }
 
-        String author = Utils.getStringOrNull(data, "d.member.nick");
-        if (author == null) {
-            author = Utils.getStringOrNull(data, "d.author.global_name");
-        }
-        if (author == null) {
-            author = Utils.getStringOrNull(data, "d.author.username");
-        }
-        String content = Utils.getStringOrNull(data, "d.content");
-
-        String message = String.format("[Discord] %s: %s", author, content);
-
+        String message = Utils.getNecesseMessage(messageJson);
         instance.server.network.sendToAllClients(new PacketChatMessage(message));
     }
 
     public static void sendChatMessage(String author, String message) {
         Json data = Json.object()
-                .set("content", String.format("[%s]: %s", author, message))
+                .set("content", Utils.getDiscordMessage(author, message))
                 .set("tts", false);
-        instance.makeRequest("post", "/channels/" + Settings.channelID + "/messages", data);
+        makeRequest("post", "/channels/" + Settings.channelID + "/messages", data);
     }
 
-    private Json makeRequest(String method, String path) {
+    public static Json makeRequest(String method, String path) {
         return makeRequest(method, path, null);
     }
 
-    private Json makeRequest(String method, String path, Json data) {
+    private static Json makeRequest(String method, String path, Json data) {
         HttpClient.WrappedRequestBuilder builder;
         if (method.equals("get")) {
-            builder = httpClient.get(path);
+            builder = instance.httpClient.get(path);
         } else if (method.equals("post")) {
-            builder = httpClient.post(path)
+            builder = instance.httpClient.post(path)
                     .withHeader("Content-Type", "application/json")
                     .withInput(data::toString);
         } else {
