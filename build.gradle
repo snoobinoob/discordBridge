@@ -69,7 +69,8 @@ dependencies {
 
     implementation "com.intellectualsites.http:HTTP4J:1.8"
     implementation "org.sharegov:mjson:1.4.2"
-    implementation 'org.java-websocket:Java-WebSocket:1.6.0'
+    implementation "org.java-websocket:Java-WebSocket:1.6.0"
+    implementation "com.vdurmont:emoji-java:5.1.1"
 
     // Add any third party library dependencies here. Remember to use libDepends, so that they will be added to your jar on build
     // These are some examples:
@@ -77,6 +78,7 @@ dependencies {
     libDepends group: "com.intellectualsites.http", name: "HTTP4J", version: "1.8"
     libDepends group: "org.sharegov", name: "mjson", version: "1.4.2"
     libDepends group: "org.java-websocket", name: "Java-WebSocket", version: "1.6.0"
+    libDepends group: "com.vdurmont", name: "emoji-java", version: "5.1.1"
 }
 
 task createAppID {

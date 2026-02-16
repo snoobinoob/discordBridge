@@ -1,5 +1,6 @@
 package discordbridge;
 
+import com.vdurmont.emoji.EmojiParser;
 import mjson.Json;
 import necesse.engine.GameLog;
 
@@ -63,14 +64,14 @@ public class Utils {
     }
 
     public static String getDiscordMessage(String author, String message) {
-        return Settings.discordMessageFormat.replace("<author>", author).replace("<message>", message);
+        return EmojiParser.parseToUnicode(Settings.discordMessageFormat.replace("<author>", author).replace("<message>", message));
     }
 
     public static String getNecesseMessage(Json messageJson) {
         Json data = messageJson.at("d");
         String author = getAuthor(data);
         String message = getStringOrNull(data, "content");
-        message = replaceMentions(message, data);
+        message = EmojiParser.parseToAliases(replaceMentions(message, data), EmojiParser.FitzpatrickAction.REMOVE);
 
         return Settings.necesseMessageFormat.replace("<author>", author).replace("<message>", message);
     }
