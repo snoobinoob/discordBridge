@@ -67,6 +67,14 @@ public class Utils {
         return EmojiParser.parseToUnicode(Settings.discordMessageFormat.replace("<author>", author).replace("<message>", message));
     }
 
+    public static String getDiscordConnectMessage(String playerName) {
+        return EmojiParser.parseToUnicode(Settings.discordConnectMessageFormat.replace("<player>", playerName));
+    }
+
+    public static String getDiscordDisconnectMessage(String playerName) {
+        return EmojiParser.parseToUnicode(Settings.discordDisconnectMessageFormat.replace("<player>", playerName));
+    }
+
     public static String getNecesseMessage(Json messageJson) {
         Json data = messageJson.at("d");
         String author = getAuthor(data);

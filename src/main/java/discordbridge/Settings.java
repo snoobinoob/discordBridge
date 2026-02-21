@@ -21,6 +21,8 @@ public class Settings extends ModSettings {
     public static String token = "";
     public static String channelID = "";
     public static String discordMessageFormat = "[Necesse] **<author>**: <message>";
+    public static String discordConnectMessageFormat = "[Necesse] _<player> has joined_";
+    public static String discordDisconnectMessageFormat = "[Necesse] _<player> has left_";
     public static String necesseMessageFormat = "[§8Discord§0] <author>: <message>";
 
     private static final Path overridePath = Paths.get("discord_bridge.txt");

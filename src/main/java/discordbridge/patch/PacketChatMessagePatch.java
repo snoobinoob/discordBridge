@@ -1,6 +1,7 @@
 package discordbridge.patch;
 
 import discordbridge.DiscordBot;
+import discordbridge.Utils;
 import necesse.engine.modLoader.annotations.ModMethodPatch;
 import necesse.engine.network.NetworkPacket;
 import necesse.engine.network.packet.PacketChatMessage;
@@ -22,9 +23,9 @@ public class PacketChatMessagePatch {
             if (thiz.slot != client.slot || message.startsWith("/")) {
                 return;
             }
-            
+
             String author = client.getName();
-            DiscordBot.sendChatMessage(author, message);
+            DiscordBot.sendChatMessage(Utils.getDiscordMessage(author, message));
         }
     }
 }

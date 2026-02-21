@@ -98,9 +98,9 @@ public class DiscordBot implements Runnable {
         instance.server.network.sendToAllClients(new PacketChatMessage(message));
     }
 
-    public static void sendChatMessage(String author, String message) {
+    public static void sendChatMessage(String message) {
         Json data = Json.object()
-                .set("content", Utils.getDiscordMessage(author, message))
+                .set("content", message)
                 .set("tts", false);
         makeRequest("post", "/channels/" + Settings.channelID + "/messages", data);
     }
