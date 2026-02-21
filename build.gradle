@@ -7,7 +7,7 @@ plugins {
 
 project.ext.modID = "snoobinoob.discordbridge" // The unique id of your mod. Must be all lowercase and cannot use special characters.
 project.ext.modName = "Discord Bridge" // The display name of your mod.
-project.ext.modVersion = "1.0" // Your current builds version. Must follow the xx.xx... format.
+project.ext.modVersion = "1.1" // Your current builds version. Must follow the xx.xx... format.
 project.ext.gameVersion = "1.1.1" // The target game version.
 project.ext.modDescription = "Adds two-way chat with Discord" // Short description of what your mod is.
 project.ext.author = "Snoobinoob" // Your name
