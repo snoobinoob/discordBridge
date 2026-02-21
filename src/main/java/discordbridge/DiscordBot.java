@@ -5,6 +5,7 @@ import com.intellectualsites.http.EntityMapper;
 import com.intellectualsites.http.HttpClient;
 import com.intellectualsites.http.HttpResponse;
 import discordbridge.websocket.DiscordWebSocketClient;
+import discordbridge.websocket.ReconnectData;
 import discordbridge.websocket.message.PresenceMessage;
 import mjson.Json;
 import necesse.engine.network.packet.PacketChatMessage;
@@ -63,6 +64,26 @@ public class DiscordBot implements Runnable {
             wsClient.connect();
         } catch (URISyntaxException e) {
             Utils.warn("Unexpected format exception in websocket url");
+        }
+    }
+
+    public static void reconnectWebSocket() {
+        instance.reconnect(instance.wsClient.reconnectData, instance.wsClient.heartbeatSequenceNumber);
+    }
+
+    public static void reconnectWebSocket(ReconnectData data, Object sequenceNumber) {
+        instance.reconnect(data, sequenceNumber);
+    }
+
+    private void reconnect(ReconnectData data, Object sequenceNumber) {
+        if (wsClient != null && !wsClient.isClosed()) {
+            wsClient.close(1012, "Reconnecting");
+        }
+        if (data == null) {
+            signIn();
+        } else {
+            wsClient = new DiscordWebSocketClient(data, sequenceNumber);
+            wsClient.connect();
         }
     }
 

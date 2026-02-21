@@ -4,6 +4,7 @@ import discordbridge.DiscordBot;
 import discordbridge.Utils;
 import discordbridge.websocket.message.HeartbeatMessage;
 import discordbridge.websocket.message.IdentifyMessage;
+import discordbridge.websocket.message.ResumeMessage;
 import discordbridge.websocket.message.WebSocketMessage;
 import mjson.Json;
 import necesse.engine.GameLog;
@@ -16,25 +17,34 @@ import java.util.TimerTask;
 
 public class DiscordWebSocketClient extends WebSocketClient {
     private enum State {
-        DISCONNECTED,
+        TO_CONNECT,
         CONNECTING,
+        TO_RECONNECT,
+        RECONNECTING,
         CONNECTED,
     }
 
     private State state;
-    private Object heartbeatSequenceNumber;
+    public Object heartbeatSequenceNumber;
     private Timer heartbeatTimer;
+    public ReconnectData reconnectData;
 
     public DiscordWebSocketClient(URI websocketUri) {
         super(websocketUri);
-        state = State.DISCONNECTED;
+        state = State.TO_CONNECT;
+    }
+
+    public DiscordWebSocketClient(ReconnectData reconnectData, Object heartbeatSequenceNumber) {
+        super(reconnectData.gatewayUri);
+        this.reconnectData = reconnectData;
+        this.heartbeatSequenceNumber = heartbeatSequenceNumber;
+        state = State.TO_RECONNECT;
     }
 
     @Override
     public void connect() {
         super.connect();
-        state = State.CONNECTING;
-        heartbeatSequenceNumber = null;
+        state = state == State.TO_CONNECT ? State.CONNECTING : State.RECONNECTING;
         heartbeatTimer = new Timer("Discord-Heartbeat");
     }
 
@@ -47,14 +57,21 @@ public class DiscordWebSocketClient extends WebSocketClient {
     public void onMessage(String message) {
         Json json = Json.read(message);
         Utils.debug("[WS] Received message: " + message);
-        if (json.has("s")) {
+        if (isMessageType(json, OpCodes.DISPATCH)) {
             heartbeatSequenceNumber = json.at("s").getValue();
             Utils.debug("[WS] Set sequence to: " + heartbeatSequenceNumber);
         }
+
         if (isMessageType(json, OpCodes.HEARTBEAT)) {
             send(new HeartbeatMessage(heartbeatSequenceNumber));
+        } else if (isMessageType(json, OpCodes.RECONNECT)) {
+            DiscordBot.reconnectWebSocket(reconnectData, heartbeatSequenceNumber);
+        } else if (isMessageType(json, OpCodes.INVALID_SESSION)) {
+            DiscordBot.reconnectWebSocket();
         } else if (state == State.CONNECTING) {
             processConnectingMessage(json);
+        } else if (state == State.RECONNECTING) {
+            processReconnectingMessage(json);
         } else if (state == State.CONNECTED) {
             processedConnectedMessage(json);
         }
@@ -93,6 +110,25 @@ public class DiscordWebSocketClient extends WebSocketClient {
             Utils.debug("[WS] Received heartbeat acknowledgment");
         } else if (isMessageType(messageJson, OpCodes.READY)) {
             Utils.log("[WS] Authentication complete!");
+            String sessionID = Utils.getStringOrNull(messageJson, "d.session_id");
+            String resumeUrl = Utils.getStringOrNull(messageJson, "d.resume_gateway_url");
+            reconnectData = new ReconnectData(sessionID, resumeUrl);
+            state = State.CONNECTED;
+        }
+    }
+
+    private void processReconnectingMessage(Json messageJson) {
+        if (isMessageType(messageJson, OpCodes.HELLO)) {
+            Json intervalJson = Utils.atPath(messageJson, "d.heartbeat_interval");
+            if (intervalJson == null) {
+                Utils.warn("[WS] Missing heartbeat interval in HELLO event");
+                return;
+            }
+            heartbeatTimer.scheduleAtFixedRate(new SendHeartbeatTask(), 0, intervalJson.asInteger());
+            Utils.debug("[WS] Sending Resume message");
+            send(new ResumeMessage(reconnectData, heartbeatSequenceNumber));
+        } else if (isMessageType(messageJson, OpCodes.RESUMED)) {
+            Utils.log("[WS] Resume complete!");
             state = State.CONNECTED;
         }
     }
@@ -108,7 +144,7 @@ public class DiscordWebSocketClient extends WebSocketClient {
     }
 
     private static boolean isMessageType(Json messageJson, String type) {
-        boolean isOpZero = Utils.hasMatchingAttribute(messageJson, "op", 0);
+        boolean isOpZero = Utils.hasMatchingAttribute(messageJson, "op", OpCodes.DISPATCH);
         boolean isType = Utils.hasMatchingAttribute(messageJson, "t", type);
         return isOpZero && isType;
     }
