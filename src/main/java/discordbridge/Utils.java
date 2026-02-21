@@ -13,6 +13,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Utils {
+    public static boolean DEBUG_ENABLED = false;
+
     public static String getStringOrNull(Json data, String path) {
         return getStringOrElse(data, path, null);
     }
@@ -48,7 +50,9 @@ public class Utils {
     }
 
     public static void debug(String message) {
-        log(GameLog.debug, message);
+        if (DEBUG_ENABLED) {
+            log(GameLog.debug, message);
+        }
     }
 
     public static void warn(String message) {
