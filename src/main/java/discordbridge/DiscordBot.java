@@ -68,7 +68,7 @@ public class DiscordBot implements Runnable {
     }
 
     public static void reconnectWebSocket() {
-        instance.reconnect(instance.wsClient.reconnectData, instance.wsClient.heartbeatSequenceNumber);
+        instance.reconnect(null, null);
     }
 
     public static void reconnectWebSocket(ReconnectData data, Object sequenceNumber) {

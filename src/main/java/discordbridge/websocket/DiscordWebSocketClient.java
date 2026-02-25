@@ -12,6 +12,8 @@ import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
 import java.net.URI;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -22,6 +24,20 @@ public class DiscordWebSocketClient extends WebSocketClient {
         TO_RECONNECT,
         RECONNECTING,
         CONNECTED,
+    }
+
+    private static final Set<Integer> disconnectCodesToIgnore = new HashSet<>();
+
+    {
+        disconnectCodesToIgnore.add(1000);
+        disconnectCodesToIgnore.add(1001);
+        disconnectCodesToIgnore.add(1012);
+        disconnectCodesToIgnore.add(4004);
+        disconnectCodesToIgnore.add(4010);
+        disconnectCodesToIgnore.add(4011);
+        disconnectCodesToIgnore.add(4012);
+        disconnectCodesToIgnore.add(4013);
+        disconnectCodesToIgnore.add(4014);
     }
 
     private State state;
@@ -81,6 +97,9 @@ public class DiscordWebSocketClient extends WebSocketClient {
     public void onClose(int code, String reason, boolean remote) {
         Utils.log(String.format("[WS] Connection closed (%d: %s)", code, reason));
         heartbeatTimer.cancel();
+        if (!disconnectCodesToIgnore.contains(code)) {
+            DiscordBot.reconnectWebSocket();
+        }
     }
 
     @Override
